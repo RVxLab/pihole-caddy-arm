@@ -1,0 +1,4 @@
+.env
+pihole/pihole-data
+pihole/dnsmasq
+caddy/Caddyfile

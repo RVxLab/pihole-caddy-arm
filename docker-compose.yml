@@ -1,0 +1,55 @@
+version: '3'
+services:
+    cloudflare-ddns:
+        image: oznu/cloudflare-ddns:${DDNS_IMAGE}
+        restart: unless-stopped
+        environment:
+            - EMAIL=${CF_EMAIL}
+            - API_KEY=${CF_API_KEY}
+            - ZONE=${CF_ZONE}
+            - SUBDOMAIN=${CF_SUBDOMAIN}
+            - PROXIED=false
+
+    proxy:
+        image: yobasystems/alpine-caddy:${CADDY_IMAGE}
+        restart: unless-stopped
+        ports:
+            - 2015:2015
+            - 80:80
+            - 443:443
+
+        networks:
+            - proxy
+
+        volumes:
+            - "./caddy/Caddyfile:/etc/Caddyfile"
+
+    pihole:
+        image: pihole/pihole:${PIHOLE_IMAGE}
+        restart: unless-stopped
+        ports:
+            - "53:53/tcp"
+            - "53:53/udp"
+
+        networks:
+            - proxy
+
+        volumes:
+            - ./pihole/pihole-data:/etc/pihole/
+            - ./pihole/dnsmasq:/etc/dnsmasq.d/
+
+        dns:
+            - 8.8.8.8
+            - 8.8.4.4
+            - 1.1.1.1
+            - 1.0.0.1
+
+        environment:
+            - TZ=${PIHOLE_TZ}
+            - VIRTUAL_HOST=${PIHOLE_DOMAIN}
+            - WEBPASSWORD=${PIHOLE_PASSWORD}
+
+networks:
+    proxy:
+        driver: bridge
+
